@@ -34,15 +34,6 @@ class Channel():
             channel = json.dumps(channel_dict, indent=2, ensure_ascii=False)
             file.write(channel)
 
-    def __str__(self):
-        return f'Youtube-канал: {self.name}'
-
-    def __add__(self, other):
-        return int(self.subscriber_count) + int(other.subscriber_count)
-
-    def __lt__(self, other):
-        return self.subscriber_count > other.subscriber_count
-
 id1 = 'UCMCgOm8GZkHp8zJ6l7_hIuA'
 id2 = 'UC1eFXmJNkjITxPFWTy6RsWg'
 ch1 = Channel(id1)
