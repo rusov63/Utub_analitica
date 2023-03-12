@@ -1,9 +1,17 @@
 import os
 import json
+from datetime import datetime, timedelta
 from googleapiclient.discovery import build
 
+class MixinYT():
 
-class Channel():
+    @classmethod
+    def get_service(cls):
+        api_key: str = os.getenv('API-KEY')
+        youtube = build('youtube', 'v3', developerKey=api_key)
+        return youtube
+
+class Channel(MixinYT):
 
     def __init__(self, id):
         self.__id = id
@@ -17,12 +25,6 @@ class Channel():
     @property
     def id(self):
         return self.__id
-
-    @classmethod
-    def get_service(cls):
-        api_key: str = os.getenv('API-KEY')
-        youtube = build('youtube', 'v3', developerKey=api_key)
-        return youtube
 
     def print_info(self):
         channel = Channel.get_service().channels().list(id=self.__id, part='snippet,statistics').execute()
@@ -51,7 +53,7 @@ class Channel():
         return int(self.subscriber_count) + int(other.subscriber_count)
 
 
-class Video():
+class Video(MixinYT):
 
     def __init__(self, id):
         """Инициализация агрументов: название, кол-во лайков и просмотров"""
@@ -68,26 +70,79 @@ class Video():
         video_info = Video.get_service().videos().list(id=self.id, part="statistics").execute()
         return video_info
 
-    @classmethod
-    def get_service(cls):
-        api_key: str = os.getenv('API-KEY')
-        youtube = build('youtube', 'v3', developerKey=api_key)
-        return youtube
-
     def __str__(self):
         return f'{self.title}'
 
 
 class PLVideo(Video):
-    def __init__(self, id, play_id):
-        self.play_id = play_id
+    def __init__(self, id, pl_id):
         super().__init__(id)
+        self.pl_id = pl_id
+
+    @property
+    def pl_title(self):
+        playlist = PLVideo.get_service().playlists().list(id=self.pl_id, part='snippet').execute()
+        return playlist['items'][0]['snippet']['title']
+
+    def __str__(self):
+        return f'{self.title} ({self.pl_title})'
+
+class Playlist(MixinYT):
+    def __init__(self, id):
+        self.id = id
+
+    @property
+    def title(self):
+        playlist = Playlist.get_service().playlists().list(id=self.id, part='snippet').execute()
+        return playlist['items'][0]['snippet']['title']
+
+    @property
+    def url(self):
+        return f'https://www.youtube.com/playlist?list={self.id}'
+
+    def video_list(self):
+        playlist = Playlist.get_service().playlistItems().list(playlistId=self.id, part="contentDetails", maxResults=50).execute()
+        video_list = []
+        for item in playlist['items']:
+            video_list.append(item['contentDetails']['videoId'])
+        return video_list
+
+    def total_duration(self):
+        video_list = self.video_list()
+        total_duration = timedelta(seconds=0)
+        for item in video_list:
+            video = Playlist.get_service().videos().list(id=item, part="contentDetails").execute()
+            duration = video['items'][0]['contentDetails']['duration']
+            duration_time = datetime.strptime(duration, 'PT%HH%MM%SS') - datetime.strptime("00:00:00","%H:%M:%S")
+            total_duration += duration_time
+        return total_duration
+
+    def show_best_video(self):
+        video_list = self.video_list()
+        best_video = ''
+        likes = 0
+        for item in video_list:
+            video = Video(item)
+            if int(video.likes) > likes:
+                likes = int(video.likes)
+                best_video = item
+        return f'https://youtu.be/{best_video}'
 
 
-video1 = Video('9lO06Zxhu88')
-video2 = PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
-print(video1)  # Как устроена IT-столица мира / Russian Silicon Valley (English subs).
-print(video2)  # Пушкин: наше все?
+# С пятой домашки.
+pl=Playlist('PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
+print(pl.title) # Литература
+print(pl.url) # https://www.youtube.com/playlist?list=PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD.
+print(pl.total_duration()) # 9:18:35
+print(type(pl.total_duration())) # <class 'datetime.timedelta'>
+print(pl.show_best_video()) # https://youtu.be/1ot9xIG9lKc
+
+
+# С четвертой домашки.
+# video1 = Video('9lO06Zxhu88')
+# video2 = PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
+# print(video1)  # Как устроена IT-столица мира / Russian Silicon Valley (English subs).
+# print(video2)  # Пушкин: наше все?
 
 # С третье домашки.
 # id1 = 'UCMCgOm8GZkHp8zJ6l7_hIuA'
