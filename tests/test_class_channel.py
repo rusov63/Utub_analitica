@@ -1,5 +1,5 @@
 import pytest
-from utils.class_channel import Channel, Video, PLVideo
+from utils.class_channel import Channel, Video, PLVideo, Playlist
 
 
 def test__init__():
@@ -35,3 +35,8 @@ def test__str__():
     video2 = PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
     assert video1.__str__() == 'Как устроена IT-столица мира / Russian Silicon Valley (English subs)'
     assert video2.__str__() == 'Пушкин: наше все?'
+
+def test_Playlist():
+    pl = Playlist('PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
+    assert pl.url == 'https://www.youtube.com/playlist?list=PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD'
+    assert pl.show_best_video() == 'https://youtu.be/1ot9xIG9lKc'
