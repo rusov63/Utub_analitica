@@ -58,17 +58,24 @@ class Video(MixinYT):
     def __init__(self, id):
         """Инициализация агрументов: название, кол-во лайков и просмотров"""
         self.id = id
-        self.title = Video.print(self)['items'][0]['snippet']['title']
-        self.likes = Video.views(self)['items'][0]['statistics']['likeCount']
-        self.views = Video.views(self)['items'][0]['statistics']['viewCount']
+        video_info_snip = Video.get_service().videos().list(id=self.id, part="snippet").execute()
+        video_info_st = Video.get_service().videos().list(id=self.id, part="statistics").execute()
+        try:
+            self.title = Video.print(self)['items'][0]['snippet']['title']
+            self.likes = Video.views(self)['items'][0]['statistics']['likeCount']
+            self.views = Video.views(self)['items'][0]['statistics']['viewCount']
+        except:
+            self.title = None
+            self.likes = None
+            self.views = None
 
-    def print(self):
-        video_info = Video.get_service().videos().list(id=self.id, part="snippet").execute()
-        return video_info
-
-    def views(self):
-        video_info = Video.get_service().videos().list(id=self.id, part="statistics").execute()
-        return video_info
+    # def print(self):
+    #     video_info = Video.get_service().videos().list(id=self.id, part="snippet").execute()
+    #     return video_info
+    #
+    # def views(self):
+    #     video_info = Video.get_service().videos().list(id=self.id, part="statistics").execute()
+    #     return video_info
 
     def __str__(self):
         return f'{self.title}'
@@ -129,6 +136,10 @@ class Playlist(MixinYT):
         return f'https://youtu.be/{best_video}'
 
 
+broken_video = Video('broken_video_id')
+print(broken_video.title) # None
+print(broken_video.like_count) # None
+
 # С пятой домашки.
 pl=Playlist('PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
 print(pl.title) # Литература
@@ -138,7 +149,7 @@ print(type(pl.total_duration())) # <class 'datetime.timedelta'>
 print(pl.show_best_video()) # https://youtu.be/1ot9xIG9lKc
 
 
-# С четвертой домашки.
+#С четвертой домашки.
 # video1 = Video('9lO06Zxhu88')
 # video2 = PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
 # print(video1)  # Как устроена IT-столица мира / Russian Silicon Valley (English subs).
